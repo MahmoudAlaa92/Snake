@@ -3,6 +3,6 @@
 
 A simple snake game played with Python
 
-https://github.com/user-attachments/assets/5b19843a-7364-47de-b7fe-ed324bdd2dc2
 
+https://github.com/user-attachments/assets/89eace5c-e3ce-4f9b-ba13-7591f7cd3cac
 
