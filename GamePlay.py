@@ -1,114 +1,125 @@
-import turtle as t
-import random as rd
+from tkinter import *
+import random 
 
-t.bgcolor('#ffe5b4')
-t.title("Caterpillar Game")
+WIDTH = 500
+HEIGHT = 500
+SPEED = 200
+SPACE_SIZE = 20
+BODY_SIZE = 2
+SNAKE = "green"
+FOOD = "green"
+BACKGROUND = "#ffe5b4"
 
-caterpillar = t.Turtle()
-caterpillar.shape('square')
-caterpillar.color('dark green')
-caterpillar.speed(0)
-caterpillar.penup()
-caterpillar.hideturtle()
+class Snake: 
+	def __init__(self): 
+		self.body_size = BODY_SIZE 
+		self.coordinates = [] 
+		self.squares = [] 
 
-leaf = t.Turtle()
-leaf_shape = ((0, 0), (14, 2), (18, 6), (20, 20), (6, 18), (2, 14))
-t.register_shape('leaf', leaf_shape)
-leaf.shape('circle')
-leaf.color('lime green')
-leaf.penup()
-leaf.hideturtle()
+		for i in range(0, BODY_SIZE): 
+			self.coordinates.append([0, 0]) 
 
-game_started = False
-text_turtle = t.Turtle()
-text_turtle.color('dark blue')
-text_turtle.write('Press SPACE to start', align='center', font=('Arial', 16, 'bold'))
-text_turtle.hideturtle()
+		for x, y in self.coordinates: 
+			square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE, tag="snake") 
+			self.squares.append(square) 
 
-score_turtle = t.Turtle()
-score_turtle.hideturtle()
-score_turtle.speed(0)
+class Food:
+    def __init__(self):
+        x = random.randint(0, int(WIDTH / SPACE_SIZE) - 1) * SPACE_SIZE
+        y = random.randint(0, int(HEIGHT / SPACE_SIZE) - 1) * SPACE_SIZE
+        self.coordinates = [x, y]
+        canvas.create_oval(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=FOOD, tag="food")
 
-def outside_window():
-    left_wall = -t.window_width() / 2
-    right_wall = t.window_width() / 2
-    top_wall = t.window_height() / 2
-    bottom_wall = -t.window_height() / 2
-    (x, y) = caterpillar.pos()
-    outside = x < left_wall or x > right_wall or y < bottom_wall or y > top_wall
-    return outside
+def next_turn(snake, food): 
+	x, y = snake.coordinates[0] 
+	if direction == "up": 
+		y -= SPACE_SIZE 
+	elif direction == "down": 
+		y += SPACE_SIZE 
+	elif direction == "left": 
+		x -= SPACE_SIZE 
+	elif direction == "right": 
+		x += SPACE_SIZE 
+	snake.coordinates.insert(0, (x, y)) 
+	square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE) 
+	snake.squares.insert(0, square) 
+	if x == food.coordinates[0] and y == food.coordinates[1]: 
+		global score 
+		score += 1
+		label.config(text="Points:{}".format(score)) 
+		canvas.delete("food") 
+		food = Food() 
+	else: 
+		del snake.coordinates[-1] 
+		canvas.delete(snake.squares[-1]) 
+		del snake.squares[-1] 
+	if check_collisions(snake): 
+		game_over() 
+	else: 
+		window.after(SPEED, next_turn, snake, food) 
 
-def game_over():
-    caterpillar.color('red')
-    leaf.color('red')
-    t.penup()
-    t.hideturtle()
-    t.write('GAME OVER!', align='center', font=('Arial', 30, 'normal'))
+def change_direction(new_direction): 
+	global direction 
+	if new_direction == 'left': 
+		if direction != 'right': 
+			direction = new_direction 
+	elif new_direction == 'right': 
+		if direction != 'left': 
+			direction = new_direction 
+	elif new_direction == 'up': 
+		if direction != 'down': 
+			direction = new_direction 
+	elif new_direction == 'down': 
+		if direction != 'up': 
+			direction = new_direction 
 
-def display_score(current_score):
-    score_turtle.clear()
-    score_turtle.penup()
-    x = (t.window_width() / 2) - 50
-    y = (t.window_height() / 2) - 50
-    score_turtle.setpos(x, y)
-    score_turtle.write(f"Score: {current_score}", align='right', font=('Arial', 20, 'bold'))
+def check_collisions(snake): 
+	x, y = snake.coordinates[0] 
+	if x < 0 or x >= WIDTH: 
+		return True
+	elif y < 0 or y >= HEIGHT: 
+		return True
+	for body_part in snake.coordinates[1:]: 
+		if x == body_part[0] and y == body_part[1]: 
+			return True
+	return False
 
-def place_leaf():
-    leaf.hideturtle()
-    leaf.setx(rd.randint(-200, 200))
-    leaf.sety(rd.randint(-200, 200))
-    leaf.showturtle()
+def game_over(): 
+	canvas.delete(ALL) 
+	canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2, font=('consolas', 70), text="GAME OVER", fill="black", tag="gameover") 
 
-def start_game():
-    global game_started
-    if game_started:
-        return
-    game_started = True
+window = Tk() 
+window.title("GFG Snake game ") 
 
-    score = 0
-    text_turtle.clear()
+score = 0
+direction = 'down'
 
-    caterpillar_speed = 2
-    caterpillar_length = 3
-    caterpillar.shapesize(1, caterpillar_length, 1)
-    caterpillar.showturtle()
-    display_score(score)
-    place_leaf()
+label = Label(window, text="Points:{}".format(score), font=('consolas', 20)) 
+label.pack() 
 
-    while True:
-        caterpillar.forward(caterpillar_speed)
-        if caterpillar.distance(leaf) < 20:
-            place_leaf()
-            caterpillar_length = caterpillar_length + 1
-            caterpillar.shapesize(1, caterpillar_length, 1)
-            caterpillar_speed = caterpillar_speed + 1
-            score = score + 10
-            display_score(score)
-        if outside_window():
-            game_over()
-            break
+canvas = Canvas(window, bg=BACKGROUND, height=HEIGHT, width=WIDTH) 
+canvas.pack() 
 
-def move_up():
-    if caterpillar.heading() == 0 or caterpillar.heading() == 180:
-        caterpillar.setheading(90)
+window.update() 
 
-def move_down():
-    if caterpillar.heading() == 0 or caterpillar.heading() == 180:
-        caterpillar.setheading(270)
+window_width = window.winfo_width() 
+window_height = window.winfo_height() 
+screen_width = window.winfo_screenwidth() 
+screen_height = window.winfo_screenheight() 
 
-def move_left():
-    if caterpillar.heading() == 90 or caterpillar.heading() == 270:
-        caterpillar.setheading(180)
+x = int((screen_width/2) - (window_width/2)) 
+y = int((screen_height/2) - (window_height/2)) 
 
-def move_right():
-    if caterpillar.heading() == 90 or caterpillar.heading() == 270:
-        caterpillar.setheading(0)
+window.geometry(f"{window_width}x{window_height}+{x}+{y}") 
 
-t.onkey(start_game, 'space')
-t.onkey(move_up, 'Up')
-t.onkey(move_right, 'Right')
-t.onkey(move_down, 'Down')
-t.onkey(move_left, 'Left')
-t.listen()
+window.bind('<Left>', lambda event: change_direction('left')) 
+window.bind('<Right>', lambda event: change_direction('right')) 
+window.bind('<Up>', lambda event: change_direction('up')) 
+window.bind('<Down>', lambda event: change_direction('down')) 
 
-t.mainloop()
+snake = Snake() 
+food = Food() 
+
+next_turn(snake, food) 
+
+window.mainloop() 
